@@ -27,6 +27,19 @@
             <form method="post" action="">
                 <textarea name="query" placeholder="Nhập lệnh SQL ở đây..."><?php echo isset($_POST['query']) ? htmlspecialchars($_POST['query']) : ''; ?></textarea>
                 <br>
+                <!-- Dropdown to select SQL file -->
+                <label for="sql_command">Chọn SQL Command: </label>
+                    <select name="sql_command" id="sql_command">
+                        <option value="a_top10_like.php">a. Top 10 bài tin nhiều like</option>
+                        <option value="b_find_congnghe.php">b. Tìm bài viết công nghệ</option>
+                        <option value="c_filter_danhmuc.php">c. Lọc theo danh mục</option>
+                        <option value="d_comments_on_post.php">d. Bình luận theo bài viết</option>
+                        <option value="e_find_reader_comments.php">e. Độc giả bình luận từ khoá</option>
+                        <option value="f_sum_like.php">f. Tính tổng lượt thích</option>
+                        <option value="g_insert_post.php">g. Thêm bài viết mới</option>
+                        <option value="h_insert_comment.php">h. Thêm bình luận mới</option>
+                        <option value="i_update_post.php">i. Cập nhật nội dung bài viết</option>
+                    </select>
                 <button type="submit">Go</button>
             </form>
 
@@ -47,44 +60,53 @@
                         die("<p style='color:red;'>Kết nối thất bại: " . $conn->connect_error . "</p>");
                     }
 
-                    $query = $_POST["query"];
+                    // Include the selected SQL command file
+                    if (isset($_POST["sql_command"])) {
+                        $command_file = 'sql_commands/' . $_POST["sql_command"];
+                        if (file_exists($command_file)) {
+                            include($command_file);
+                        } else {
+                            echo "<p style='color:red;'>File SQL không hợp lệ.</p>";
+                            exit;
+                        }
 
-                    // Execute query
-                    if ($conn->multi_query($query)) {
-                        do {
-                            if ($result = $conn->store_result()) {
-                                echo "<h3>Kết quả truy vấn:</h3>";
-                                echo "<table border='1' cellpadding='5' cellspacing='0'>";
-                                echo "<tr>";
-                                while ($field = $result->fetch_field()) {
-                                    echo "<th>" . htmlspecialchars($field->name) . "</th>";
-                                }
-                                echo "</tr>";
-
-                                while ($row = $result->fetch_assoc()) {
+                        // Execute the query
+                        if ($conn->multi_query($query)) {
+                            do {
+                                if ($result = $conn->store_result()) {
+                                    echo "<h3>Kết quả truy vấn:</h3>";
+                                    echo "<table border='1' cellpadding='5' cellspacing='0'>";
                                     echo "<tr>";
-                                    foreach ($row as $cell) {
-                                        echo "<td>" . htmlspecialchars($cell) . "</td>";
+                                    while ($field = $result->fetch_field()) {
+                                        echo "<th>" . htmlspecialchars($field->name) . "</th>";
                                     }
                                     echo "</tr>";
-                                }
-                                echo "</table>";
-                                $result->free();
-                            } else {
-                                if ($conn->errno) {
-                                    echo "<p style='color:red;'>Lỗi: " . $conn->error . "</p>";
+
+                                    while ($row = $result->fetch_assoc()) {
+                                        echo "<tr>";
+                                        foreach ($row as $cell) {
+                                            echo "<td>" . htmlspecialchars($cell) . "</td>";
+                                        }
+                                        echo "</tr>";
+                                    }
+                                    echo "</table>";
+                                    $result->free();
                                 } else {
-                                    echo "<p style='color:green;'>Thành công! Affected rows: " . $conn->affected_rows . "</p>";
+                                    if ($conn->errno) {
+                                        echo "<p style='color:red;'>Lỗi: " . $conn->error . "</p>";
+                                    } else {
+                                        echo "<p style='color:green;'>Thành công! Affected rows: " . $conn->affected_rows . "</p>";
+                                    }
                                 }
-                            }
-                        } while ($conn->more_results() && $conn->next_result());
-                    } else {
-                        echo "<p style='color:red;'>Lỗi thực thi: " . $conn->error . "</p>";
+                            } while ($conn->more_results() && $conn->next_result());
+                        } else {
+                            echo "<p style='color:red;'>Lỗi thực thi: " . $conn->error . "</p>";
+                        }
                     }
 
                     $conn->close();
                 }
-                ?>
+            ?>
             </div>
         </div>
     </div>
